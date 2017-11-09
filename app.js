@@ -20,8 +20,7 @@ const
   xhub = require('express-x-hub');
 
 var app = express();
-var server = https.createServer(app);
-var io = require('socket.io').listen(server);
+var io = require('socket.io').listen(app);
 
 app.set('port', process.env.PORT || 5000);
 app.set('view engine', 'ejs');
@@ -864,7 +863,6 @@ app.get('/facebook', function (req, res) {
 	res.sendFile('public/chat.html');
 });
 
-/*
 io.configure('production', function(){
   io.enable('browser client etag');
   io.set('log level', 1);
@@ -881,7 +879,6 @@ io.configure('production', function(){
 io.configure('development', function(){
   io.set('transports', ['websocket']);
 });
-*/
 
 io.sockets.on('connection', function(client){
     var userName;
@@ -917,7 +914,7 @@ io.sockets.on('connection', function(client){
 // Start server
 // Webhooks must be available via SSL with a certificate signed by a valid 
 // certificate authority.
-server.listen(app.get('port'), function() {
+app.listen(app.get('port'), function() {
   console.log('Node app is running on port', app.get('port'));
 });
 
