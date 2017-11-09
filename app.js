@@ -29,9 +29,6 @@ app.use(bodyParser.json({ verify: verifyRequestSignature }));
 app.use(xhub({ algorithm: 'sha1', secret: process.env.APP_SECRET }));
 //app.use(express.static('public'));
 //app.use('/public', express.static('public'));
-app.configure(function(){
-  app.use(express.static(__dirname + '/public'));
-});
 app.use(express.static(__dirname + '/public'));
 
 //Array luu danh sach request
