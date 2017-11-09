@@ -861,7 +861,7 @@ function callSendAPI(messageData) {
 
 //============================================================ Socket.IO
 app.get('/facebook', function (req, res) {
-	res.sendFile('public/chat.html');
+	res.sendFile(__dirname + '/public/chat.html');
 });
 
 /*
