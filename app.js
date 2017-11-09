@@ -16,13 +16,18 @@ const
   crypto = require('crypto'),
   express = require('express'),
   https = require('https'),  
-  request = require('request');
+  request = require('request'),
+  xhub = require('express-x-hub');
 
 var app = express();
 app.set('port', process.env.PORT || 5000);
 app.set('view engine', 'ejs');
 app.use(bodyParser.json({ verify: verifyRequestSignature }));
+app.use(xhub({ algorithm: 'sha1', secret: process.env.APP_SECRET }));
 app.use(express.static('public'));
+
+//Array luu danh sach request
+var received_updates = [];
 
 /*
  * Be sure to setup your config values before running this code. You can 
@@ -57,6 +62,14 @@ if (!(APP_SECRET && VALIDATION_TOKEN && PAGE_ACCESS_TOKEN && SERVER_URL)) {
 }
 
 /*
+ * /Data page return list calback
+ */
+ app.get('/data', function(req, res) {
+  console.log(req);
+  res.send('<pre>' + JSON.stringify(received_updates, null, 2) + '</pre>');
+});
+
+/*
  * Use your own validation token. Check that the token used in the Webhook 
  * setup is the same token used here.
  *
@@ -66,6 +79,8 @@ app.get('/webhook', function(req, res) {
       req.query['hub.verify_token'] === VALIDATION_TOKEN) {
     console.log("Validating webhook");
     res.status(200).send(req.query['hub.challenge']);
+	
+	console.error("Success validation subscribe. Send challenge: " + req.query['hub.challenge']);
   } else {
     console.error("Failed validation. Make sure the validation tokens match.");
     res.sendStatus(403);          
@@ -83,7 +98,8 @@ app.get('/webhook', function(req, res) {
 app.post('/webhook', function (req, res) {
   var data = req.body;
 
-  console.log('liemqv - body = ' + JSON.stringify(data));
+  console.log('Received webhook calback: ' + JSON.stringify(data));
+  
   
   // Make sure this is a page subscription
   if (data.object == 'page') {
@@ -93,24 +109,35 @@ app.post('/webhook', function (req, res) {
       var pageID = pageEntry.id;
       var timeOfEvent = pageEntry.time;
 
-      // Iterate over each messaging event
-      pageEntry.messaging.forEach(function(messagingEvent) {
-        if (messagingEvent.optin) {
-          receivedAuthentication(messagingEvent);
-        } else if (messagingEvent.message) {
-          receivedMessage(messagingEvent);
-        } else if (messagingEvent.delivery) {
-          receivedDeliveryConfirmation(messagingEvent);
-        } else if (messagingEvent.postback) {
-          receivedPostback(messagingEvent);
-        } else if (messagingEvent.read) {
-          receivedMessageRead(messagingEvent);
-        } else if (messagingEvent.account_linking) {
-          receivedAccountLink(messagingEvent);
-        } else {
-          console.log("Webhook received unknown messagingEvent: ", messagingEvent);
-        }
-      });
+	  
+	  //============================================ Messenger callback
+	  if(pageEntry.messaging) {
+		  // Iterate over each messaging event
+		  pageEntry.messaging.forEach(function(messagingEvent) {
+			if (messagingEvent.optin) {
+			  receivedAuthentication(messagingEvent);
+			} else if (messagingEvent.message) {
+			  receivedMessage(messagingEvent);
+			} else if (messagingEvent.delivery) {
+			  receivedDeliveryConfirmation(messagingEvent);
+			} else if (messagingEvent.postback) {
+			  receivedPostback(messagingEvent);
+			} else if (messagingEvent.read) {
+			  receivedMessageRead(messagingEvent);
+			} else if (messagingEvent.account_linking) {
+			  receivedAccountLink(messagingEvent);
+			} else {
+			  console.log("Webhook received unknown messagingEvent: ", messagingEvent);
+			}
+		  });
+		  
+		  received_updates.unshift(req.body);
+	  } else if(pageEntry.changes) {
+		// Process the Facebook updates here
+		  received_updates.unshift(req.body);
+	  } else {
+		  console.error("Unknown webhook event. response 400");
+	  }
     });
 
     // Assume all went well.
