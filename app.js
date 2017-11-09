@@ -20,7 +20,8 @@ const
   xhub = require('express-x-hub');
 
 var app = express();
-var io = require('socket.io').listen(app);
+var server = https.createServer(app);
+var io = require('socket.io').listen(server);
 
 app.set('port', process.env.PORT || 5000);
 app.set('view engine', 'ejs');
@@ -914,7 +915,7 @@ io.sockets.on('connection', function(client){
 // Start server
 // Webhooks must be available via SSL with a certificate signed by a valid 
 // certificate authority.
-app.listen(app.get('port'), function() {
+server.listen(app.get('port'), function() {
   console.log('Node app is running on port', app.get('port'));
 });
 
