@@ -20,6 +20,8 @@ const
   xhub = require('express-x-hub');
 
 var app = express();
+var io = require('socket.io').listen(app);
+
 app.set('port', process.env.PORT || 5000);
 app.set('view engine', 'ejs');
 app.use(bodyParser.json({ verify: verifyRequestSignature }));
@@ -855,6 +857,59 @@ function callSendAPI(messageData) {
     }
   });  
 }
+
+//============================================================ Socket.IO
+app.get('/facebook', function (req, res) {
+	res.sendFile('public/chat.html');
+});
+
+io.configure('production', function(){
+  io.enable('browser client etag');
+  io.set('log level', 1);
+
+  io.set('transports', [
+    'websocket', 
+    'flashsocket', 
+    'htmlfile', 
+    'xhr-polling', 
+    'jsonp-polling', 
+  ]);
+});
+
+io.configure('development', function(){
+  io.set('transports', ['websocket']);
+});
+
+io.sockets.on('connection', function(client){
+    var userName;
+	console.log("user connected!");
+	client.emit('message', 'please insert user name');
+    
+	client.on('message', function(message){
+        if (!userName) {
+			userName = message;
+			console.log(userName + ' is connected :)');
+			client.emit('message', 'Welcome ' + userName);
+			client.broadcast.emit('message', userName + ' is connected');
+		}
+		else {
+			client.emit('message', 'me: ' + message);
+			client.broadcast.emit('message', userName + ' says: ' + message);
+		}
+    });
+
+    client.on('disconnect', function() {
+		if (userName) {
+			console.log(userName + " left");
+			client.broadcast.emit('message', userName + ' left us :(');
+		}
+		else {
+			console.log("anonymous left");
+		}
+    });
+});
+
+//END: ============================================================ Socket.IO
 
 // Start server
 // Webhooks must be available via SSL with a certificate signed by a valid 
