@@ -864,6 +864,7 @@ app.get('/facebook', function (req, res) {
 	res.sendFile('public/chat.html');
 });
 
+/*
 io.configure('production', function(){
   io.enable('browser client etag');
   io.set('log level', 1);
@@ -880,6 +881,7 @@ io.configure('production', function(){
 io.configure('development', function(){
   io.set('transports', ['websocket']);
 });
+*/
 
 io.sockets.on('connection', function(client){
     var userName;
